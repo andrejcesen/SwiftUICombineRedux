@@ -9,7 +9,7 @@ import Combine
 import Foundation
 
 public typealias Epic<State> =
-    (AnyPublisher<Action, Never>, CurrentValueSubject<State?, Never>) -> AnyPublisher<Action, Never>
+    (AnyPublisher<Action, Never>, CurrentValueSubject<State, Never>) -> AnyPublisher<Action, Never>
 
 public typealias EpicMiddleware<State> = (
     run: ( @escaping Epic<State>) -> Void,

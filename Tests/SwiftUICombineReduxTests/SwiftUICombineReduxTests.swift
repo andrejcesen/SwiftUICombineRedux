@@ -74,8 +74,7 @@ final class SwiftUICombineReduxTests: XCTestCase {
                     return false
             }
             .filter { action in
-                guard let count = statePublisher.value?.count else { return false }
-                return count % 2 == 1
+                return statePublisher.value.count % 2 == 1
             }
             .map { action in
                 return AppAction.increment

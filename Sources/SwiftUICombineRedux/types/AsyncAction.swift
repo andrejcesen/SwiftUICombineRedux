@@ -8,5 +8,5 @@
 import Foundation
 
 public protocol AsyncAction: Action {
-    func execute(state: FluxState?, dispatch: @escaping DispatchFunction)
+    func execute(state: FluxState, dispatch: @escaping DispatchFunction)
 }

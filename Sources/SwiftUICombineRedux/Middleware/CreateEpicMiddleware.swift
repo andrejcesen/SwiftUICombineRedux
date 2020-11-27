@@ -14,7 +14,7 @@ public func createEpicMiddleware<State>() -> EpicMiddleware<State> {
     let run = { (rootEpic: @escaping Epic<State>) -> Void in epicSubject.send(rootEpic) }
     let epicMiddleware: Middleware<State> = { dispatch, getState in
         let actionSubject = PassthroughSubject<Action, Never>()
-        let stateSubject = CurrentValueSubject<State?, Never>(getState())
+        let stateSubject = CurrentValueSubject<State, Never>(getState())
         
         let actionPublisher = actionSubject.eraseToAnyPublisher()
         // no statePublisher, as Combine does not yet support withLatestFrom operator,

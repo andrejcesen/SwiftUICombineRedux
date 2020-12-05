@@ -88,9 +88,8 @@ final class SwiftUICombineReduxTests: XCTestCase {
                 .eraseToAnyPublisher()
         }
         
-        let epicMiddleware: EpicMiddleware<TestState> = createEpicMiddleware()
-        let store = Store(reducer: testReducer, state: TestState(), middleware: [epicMiddleware.epicMiddleware])
-        epicMiddleware.run(rootEpic)
+        let epicMiddleware: EpicMiddleware<TestState> = createEpicMiddleware(with: rootEpic)
+        let store = Store(reducer: testReducer, state: TestState(), middleware: [epicMiddleware])
         return store
     }()
     

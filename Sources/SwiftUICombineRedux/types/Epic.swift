@@ -11,7 +11,4 @@ import Foundation
 public typealias Epic<State> =
     (AnyPublisher<Action, Never>, CurrentValueSubject<State, Never>) -> AnyPublisher<Action, Never>
 
-public typealias EpicMiddleware<State> = (
-    run: ( @escaping Epic<State>) -> Void,
-    epicMiddleware: Middleware<State>
-)
+public typealias EpicMiddleware<State> = Middleware<State>

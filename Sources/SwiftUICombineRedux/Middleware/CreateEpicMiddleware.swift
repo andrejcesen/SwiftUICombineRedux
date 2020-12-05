@@ -9,9 +9,9 @@
 import Combine
 import Foundation
 
-public func createEpicMiddleware<State>() -> EpicMiddleware<State> {
+public func createEpicMiddleware<State>(with rootEpic: @escaping Epic<State>) -> EpicMiddleware<State> {
     let epicSubject = PassthroughSubject<Epic<State>, Never>()
-    let run = { (rootEpic: @escaping Epic<State>) -> Void in epicSubject.send(rootEpic) }
+    
     let epicMiddleware: Middleware<State> = { dispatch, getState in
         let actionSubject = PassthroughSubject<Action, Never>()
         let stateSubject = CurrentValueSubject<State, Never>(getState())
@@ -20,14 +20,16 @@ public func createEpicMiddleware<State>() -> EpicMiddleware<State> {
         // no statePublisher, as Combine does not yet support withLatestFrom operator,
         // which is used for getting latest state in epic
         
-        let resultSubject = epicSubject.flatMap { epic in
-            return epic(actionPublisher, stateSubject)
-        }
-        let _ = resultSubject.sink { action in
-            dispatch(action)
-        }
-        
         return { next in
+            let resultSubject = epicSubject.flatMap { epic in
+                return epic(actionPublisher, stateSubject)
+            }
+            let resultCancellable = resultSubject.sink { action in
+                dispatch(action)
+            }
+            
+            epicSubject.send(rootEpic)
+            
             return { action in
                 // run actions through downstream middleware first (which includes reducers)
                 // before publishers receive them
@@ -43,5 +45,5 @@ public func createEpicMiddleware<State>() -> EpicMiddleware<State> {
         }
     }
     
-    return (run, epicMiddleware)
+    return epicMiddleware
 }

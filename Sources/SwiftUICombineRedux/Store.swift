@@ -7,12 +7,14 @@
 //
 
 import Foundation
+import Combine
 
 final public class Store<State: FluxState>: ObservableObject {
     @Published public private(set) var state: State
     
     private var dispatchFunction: DispatchFunction!
     private let reducer: Reducer<State>
+    private var cancellables: Set<AnyCancellable> = []
     
     public init(reducer: @escaping Reducer<State>,
                 state: State,
@@ -20,7 +22,6 @@ final public class Store<State: FluxState>: ObservableObject {
         self.reducer = reducer
         self.state = state
         
-        let middleware = middleware
         self.dispatchFunction = middleware
             .reversed()
             .reduce(
@@ -29,8 +30,13 @@ final public class Store<State: FluxState>: ObservableObject {
                 { dispatchFunction, middleware in
                     let dispatch: (Action) -> Void = { [weak self] in self?.dispatch(action: $0) }
                     let getState = { [weak self] in self!.state }
-                    return middleware(dispatch, getState)(dispatchFunction)
+                    let storeCancellable = { [weak self] in self!.storeCancellable(cancellable: $0) }
+                    return middleware(dispatch, getState, storeCancellable)(dispatchFunction)
             })
+    }
+    
+    public func storeCancellable(cancellable: AnyCancellable) {
+        self.cancellables.insert(cancellable)
     }
     
     public func dispatch(action: Action) {

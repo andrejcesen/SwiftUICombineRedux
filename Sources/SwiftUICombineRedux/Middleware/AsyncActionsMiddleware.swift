@@ -7,7 +7,7 @@
 
 import Foundation
 
-public let asyncActionsMiddleware: Middleware<FluxState> = { dispatch, getState in
+public let asyncActionsMiddleware: Middleware<FluxState> = { dispatch, getState, _ in
     return { next in
         return { action in
             if let action = action as? AsyncAction {

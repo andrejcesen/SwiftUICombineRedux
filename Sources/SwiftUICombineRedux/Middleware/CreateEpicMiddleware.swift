@@ -12,7 +12,7 @@ import Foundation
 public func createEpicMiddleware<State>(with rootEpic: @escaping Epic<State>) -> EpicMiddleware<State> {
     let epicSubject = PassthroughSubject<Epic<State>, Never>()
     
-    let epicMiddleware: Middleware<State> = { dispatch, getState in
+    let epicMiddleware: Middleware<State> = { dispatch, getState, storeCancellable in
         let actionSubject = PassthroughSubject<Action, Never>()
         let stateSubject = CurrentValueSubject<State, Never>(getState())
         
@@ -21,13 +21,15 @@ public func createEpicMiddleware<State>(with rootEpic: @escaping Epic<State>) ->
         // which is used for getting latest state in epic
         
         return { next in
-            let resultSubject = epicSubject.flatMap { epic in
-                return epic(actionPublisher, stateSubject)
-            }
-            let resultCancellable = resultSubject.sink { action in
-                dispatch(action)
-            }
+            let epicCancellable = epicSubject
+                .flatMap { epic in epic(actionPublisher, stateSubject) }
+                .sink { action in dispatch(action) }
             
+            // store cancellable reference in Store object (RAII fashion)
+            // as capturing in closure releases it immediately
+            storeCancellable(epicCancellable)
+            
+            // start me up :)
             epicSubject.send(rootEpic)
             
             return { action in

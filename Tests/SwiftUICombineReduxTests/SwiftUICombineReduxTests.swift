@@ -31,17 +31,21 @@ func testReducer(state: TestState, action: Action) -> TestState {
 }
 
 struct TestView : View {
-    @EnvironmentObject var store: Store<TestState>
+    @ObservedObject var store: Store<TestState>
     
     var count: Int {
         store.state.count
+    }
+    
+    func onIncrementIfOdd() {
+        store.dispatch(action: AppAction.incrementIfOdd)
     }
     
     var body: some View {
         VStack {
             Text("\(count)")
             Button(action: {
-                self.store.dispatch(action: AppAction.increment)
+                self.onIncrementIfOdd()
             }) {
                 Text("Increment")
             }
@@ -94,36 +98,60 @@ final class SwiftUICombineReduxTests: XCTestCase {
     }()
     
     func testStore() {
+        let expectations = [
+            XCTestExpectation(description: "dispatch increment action"),
+            XCTestExpectation(description: "dispatch incrementIfOdd action"),
+            XCTestExpectation(description: "dispatch incrementIfOdd noop action"),
+        ]
+        
         XCTAssert(store.state.count == 0, "Initial state is not valid")
         
-        store.dispatch(action: AppAction.incrementIfOdd)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            XCTAssertEqual(self.store.state.count, 0, "Reduced state increment is not valid")
-            
-            // synchronous action
-            self.store.dispatch(action: AppAction.increment)
-            DispatchQueue.main.async {
-                XCTAssertEqual(self.store.state.count, 1, "Reduced state increment is not valid")
-            }
+        store.dispatch(action: AppAction.increment)
+        DispatchQueue.main.async {
+            XCTAssert(self.store.state.count == 1, "Reduced state increment is not valid")
+            expectations[0].fulfill()
             
             self.store.dispatch(action: AppAction.incrementIfOdd)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                XCTAssertEqual(self.store.state.count, 2, "Reduced state increment is not valid")
+                XCTAssert(self.store.state.count == 2, "Reduced state incrementIfOdd is not valid")
+                expectations[1].fulfill()
                 
-                self.store.dispatch(action: AppAction.ping)
+                self.store.dispatch(action: AppAction.incrementIfOdd)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    XCTAssertEqual(self.store.state.isPinging, true, "Reduced state increment is not valid")
-                    
-                    self.store.dispatch(action: AppAction.pong)
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        XCTAssertEqual(self.store.state.isPinging, false, "Reduced state increment is not valid")
-                    }
+                    XCTAssert(self.store.state.count == 2, "Reduced state incrementIfOdd noop is not valid")
+                    expectations[2].fulfill()
                 }
             }
         }
+        wait(for: expectations, timeout: 1)
+    }
+    
+    func testViewIntegration() {
+        let expectations = [
+            XCTestExpectation(description: "dispatch increment action"),
+            XCTestExpectation(description: "dispatch incrementIfOdd action")
+        ]
+        
+        XCTAssert(store.state.count == 0, "Initial state is not valid")
+        
+        let view: TestView = TestView(store: store)
+        store.dispatch(action: AppAction.increment)
+        DispatchQueue.main.async {
+            XCTAssert(view.count == 1, "Reduced state increment is not valid")
+            expectations[0].fulfill()
+            
+            self.store.dispatch(action: AppAction.incrementIfOdd)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                XCTAssert(view.count == 2, "Reduced state incrementIfOdd is not valid")
+                expectations[1].fulfill()
+            }
+        }
+        
+        wait(for: expectations, timeout: 1)
     }
     
     static var allTests = [
-        ("testExample", testStore),
+        ("testStore", testStore),
+        ("testViewIntegration", testViewIntegration),
     ]
 }

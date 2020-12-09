@@ -49,3 +49,12 @@ public func createEpicMiddleware<State>(with rootEpic: @escaping Epic<State>) ->
     
     return epicMiddleware
 }
+
+public func combineEpics<S>(_ epics: Epic<S>...) -> Epic<S> {
+    let mergeEpics: Epic<S> = { (actionPublisher, statePublisher) in
+        epics.publisher
+            .flatMap { epic in epic(actionPublisher, statePublisher) }
+            .eraseToAnyPublisher()
+    }
+    return mergeEpics
+}

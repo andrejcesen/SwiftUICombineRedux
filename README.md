@@ -4,7 +4,7 @@ Redux implementation with Combine-based middleware for unidirectional handling o
 
 ## Introduction
 
-The main idea behind SwiftUICombineRedux is in leveraging Apple's Combine Framework to handle complex asynchronous events in a way that lets you push side effects to the edges of the system, which helps you write more predictable and maintainable code that also makes testing substantially simpler.
+The main idea behind SwiftUICombineRedux is in leveraging Apple's Combine Framework to handle complex asynchronous events in a way that lets you push side effects to the edges of the system, which helps you write more predictable and maintainable code. As a bonus, this also makes testing substantially simpler by enabling you to reduce the amount of mocks to a minimum.
 
 The core building block is an *Epic*, which is a function that takes an action Publisher (along with an optional state Publisher) and returns an action Publisher.
 
